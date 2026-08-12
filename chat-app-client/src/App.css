@@ -1,5 +1,607 @@
-body {
+/* =========================
+   GLOBAL RESET
+   ========================= */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
   margin: 0;
   padding: 0;
-  font-family: Helvetica, sans-serif;
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+
+  background: #0b1120;
+  color: #f8fafc;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: rgba(99, 102, 241, 0.35);
+  color: #ffffff;
+}
+
+
+/* =========================
+   SCROLLBAR
+   ========================= */
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+
+/* =========================
+   ZIDD APP
+   ========================= */
+
+.zidd-app {
+  min-height: 100dvh;
+  width: 100%;
+  background:
+    radial-gradient(
+      circle at top center,
+      rgba(99, 102, 241, 0.08),
+      transparent 35%
+    ),
+    #0b1120;
+
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* =========================
+   ZIDD TOP HEADER
+   ========================= */
+
+.zidd-header {
+  width: 100%;
+  max-width: 1200px;
+  min-height: 76px;
+
+  margin: 0 auto 14px;
+
+  padding: 14px 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  background: rgba(17, 24, 39, 0.95);
+
+  border: 1px solid #1f2937;
+  border-radius: 14px;
+
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.18);
+
+  flex-shrink: 0;
+}
+
+
+/* =========================
+   BRAND
+   ========================= */
+
+.zidd-brand-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.zidd-brand {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #f8fafc;
+}
+
+.zidd-brand-accent {
+  color: #6366f1;
+}
+
+.zidd-batch {
+  margin-top: 4px;
+
+  font-size: 11px;
+  font-weight: 500;
+
+  color: #94a3b8;
+
+  letter-spacing: 1px;
+}
+
+
+/* =========================
+   USER SECTION
+   ========================= */
+
+.zidd-user-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.zidd-user-info {
+  min-width: 70px;
+}
+
+.zidd-username {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.zidd-online {
+  margin-top: 2px;
+
+  font-size: 11px;
+  color: #22c55e;
+}
+
+.zidd-online-dot {
+  margin-right: 4px;
+  font-size: 10px;
+}
+
+
+/* =========================
+   LOGOUT BUTTON
+   ========================= */
+
+.zidd-logout {
+  margin-left: 8px;
+
+  padding: 8px 15px;
+
+  border-radius: 9px;
+
+  border: 1px solid #374151;
+
+  background: transparent;
+
+  color: #cbd5e1;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.zidd-logout:hover {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: #6366f1;
+  color: #ffffff;
+}
+
+
+/* =========================
+   CHAT WRAPPER
+   ========================= */
+
+.zidd-chat-wrapper {
+  width: 100%;
+  max-width: 1200px;
+
+  flex: 1;
+  min-height: 0;
+
+  margin: 0 auto;
+
+  border: 1px solid #1f2937;
+  border-radius: 14px;
+
+  overflow: hidden;
+
+  background: #0f172a;
+
+  box-shadow:
+    0 10px 35px rgba(0, 0, 0, 0.18);
+}
+
+
+/* =========================
+   CHATSPCOPE MAIN
+   ========================= */
+
+.cs-main-container {
+  height: 100% !important;
+
+  border: none !important;
+  border-radius: 0 !important;
+
+  background: #0f172a !important;
+}
+
+.cs-chat-container {
+  background: #0f172a !important;
+}
+
+
+/* =========================
+   CHAT HEADER
+   ========================= */
+
+.cs-conversation-header {
+  min-height: 72px !important;
+
+  padding: 10px 14px !important;
+
+  background: #111827 !important;
+
+  border-bottom: 1px solid #1f2937 !important;
+
+  color: #f8fafc !important;
+}
+
+.cs-conversation-header__content {
+  background: transparent !important;
+  color: #f8fafc !important;
+
+  padding: 0 !important;
+}
+
+.cs-conversation-header__content * {
+  background: transparent !important;
+}
+
+.cs-conversation-header__user-name {
+  background: transparent !important;
+
+  color: #f8fafc !important;
+
+  font-size: 17px !important;
+  font-weight: 700 !important;
+}
+
+.cs-conversation-header__info {
+  background: transparent !important;
+
+  color: #94a3b8 !important;
+
+  font-size: 13px !important;
+
+  margin-top: 3px !important;
+}
+
+.cs-conversation-header__actions {
+  background: transparent !important;
+
+  color: #818cf8 !important;
+}
+
+.cs-conversation-header__actions .cs-button {
+  color: #818cf8 !important;
+}
+
+.cs-conversation-header__actions .cs-button:hover {
+  color: #a5b4fc !important;
+}
+
+
+/* =========================
+   MESSAGE LIST
+   ========================= */
+
+.cs-message-list {
+  background: #0f172a !important;
+}
+
+
+/* =========================
+   MESSAGE SPACING
+   ========================= */
+
+.cs-message {
+  margin-bottom: 7px !important;
+}
+
+
+/* =========================
+   INCOMING MESSAGE
+   ========================= */
+
+.cs-message--incoming .cs-message__content {
+  background: #1e293b !important;
+
+  color: #f8fafc !important;
+
+  border: 1px solid #293548 !important;
+
+  border-radius: 14px !important;
+
+  padding: 10px 14px !important;
+
+  max-width: 520px !important;
+
+  box-shadow:
+    0 4px 15px rgba(0, 0, 0, 0.12);
+}
+
+
+/* =========================
+   OUTGOING MESSAGE
+   ========================= */
+
+.cs-message--outgoing .cs-message__content {
+  background:
+    linear-gradient(
+      135deg,
+      #6366f1,
+      #7c3aed
+    ) !important;
+
+  color: #ffffff !important;
+
+  border: 1px solid rgba(129, 140, 248, 0.35) !important;
+
+  border-radius: 14px !important;
+
+  padding: 10px 14px !important;
+
+  max-width: 520px !important;
+
+  box-shadow:
+    0 5px 20px rgba(79, 70, 229, 0.18);
+}
+
+
+/* =========================
+   MESSAGE TEXT
+   ========================= */
+
+.cs-message__content {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  word-break: break-word;
+}
+
+.cs-message__sender-name {
+  color: #c7d2fe !important;
+}
+
+.cs-message__sent-time {
+  color: #94a3b8 !important;
+}
+
+
+/* =========================
+   EMPTY STATE
+   ========================= */
+
+.zidd-empty-state {
+  display: flex !important;
+
+  flex-direction: column !important;
+
+  justify-content: center !important;
+
+  align-items: center !important;
+
+  height: 100% !important;
+
+  text-align: center;
+
+  color: #64748b;
+}
+
+.zidd-empty-icon {
+  width: 60px;
+  height: 60px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: rgba(99, 102, 241, 0.12);
+
+  font-size: 28px;
+
+  margin-bottom: 14px;
+}
+
+.zidd-empty-state h3 {
+  margin: 0;
+
+  font-size: 18px;
+
+  font-weight: 700;
+
+  color: #cbd5e1;
+}
+
+.zidd-empty-state p {
+  margin-top: 7px;
+
+  font-size: 13px;
+
+  color: #64748b;
+}
+
+
+/* =========================
+   AVATAR
+   ========================= */
+
+.cs-avatar {
+  background: #6366f1 !important;
+}
+
+.cs-avatar img {
+  border-radius: 50%;
+}
+
+
+/* =========================
+   MESSAGE INPUT
+   ========================= */
+
+.cs-message-input {
+  background: #111827 !important;
+  border-top: 1px solid #1f2937 !important;
+  padding: 12px !important;
+}
+
+/* Outer input box */
+.cs-message-input__content-editor-wrapper {
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+  border-radius: 10px !important;
+}
+
+/* Actual editable area */
+.cs-message-input__content-editor {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+
+  caret-color: #a5b4fc !important;
+
+  -webkit-text-fill-color: #f8fafc !important;
+}
+
+/* Placeholder */
+.cs-message-input__content-editor::placeholder {
+  color: #64748b !important;
+  opacity: 1 !important;
+}
+
+/* Browser/contenteditable specific fix */
+.cs-message-input__content-editor[contenteditable="true"] {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  -webkit-text-fill-color: #f8fafc !important;
+}
+
+/* Focus */
+.cs-message-input__content-editor:focus {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  outline: none !important;
+}
+
+/* Send button */
+.cs-button--send {
+  color: #818cf8 !important;
+}
+
+.cs-button--send:hover {
+  color: #a5b4fc !important;
+}
+
+/* =========================
+   MOBILE
+   ========================= */
+
+@media (max-width: 600px) {
+
+  .zidd-app {
+    padding: 0 !important;
+  }
+
+  .zidd-header {
+    margin: 0;
+
+    border-radius: 0;
+
+    min-height: 68px;
+
+    padding: 10px 12px;
+  }
+
+  .zidd-brand {
+    font-size: 18px;
+  }
+
+  .zidd-batch {
+    font-size: 9px;
+  }
+
+  .zidd-user-info {
+    display: none;
+  }
+
+  .zidd-logout {
+    margin-left: 4px;
+    padding: 7px 11px;
+  }
+
+  .zidd-chat-wrapper {
+    margin: 0;
+
+    border-radius: 0;
+
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+  }
+
+  .cs-conversation-header {
+    min-height: 64px !important;
+
+    padding: 8px !important;
+  }
+
+  .cs-conversation-header__user-name {
+    font-size: 15px !important;
+  }
+
+  .cs-conversation-header__info {
+    font-size: 11px !important;
+  }
+
+  .cs-message-list {
+    padding: 8px !important;
+  }
+
+  .cs-message--incoming .cs-message__content,
+  .cs-message--outgoing .cs-message__content {
+    max-width: 80vw !important;
+  }
+
+  .cs-message__content {
+    font-size: 14px !important;
+  }
 }

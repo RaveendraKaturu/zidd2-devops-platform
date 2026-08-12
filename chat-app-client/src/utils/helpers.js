@@ -3,7 +3,9 @@ export const formatUsername = (name) => {
 };
 
 export const createAvatar = (name) => {
-  return `https://source.boringavatars.com/beam/120/${name}`;
+  return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(
+    name || "User"
+  )}&backgroundColor=6366f1&fontFamily=Arial`;
 };
 
 export const messageMapper = (message) => {

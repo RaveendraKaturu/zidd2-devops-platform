@@ -7,8 +7,13 @@ import Auth from "./pages/auth";
 import { API_WS_URL } from "./utils/constants";
 
 function App() {
-  const { appLoading, currentUser, setCurrentUser, ticket, handleLogout } =
-    useApp();
+  const {
+    appLoading,
+    currentUser,
+    setCurrentUser,
+    ticket,
+    handleLogout,
+  } = useApp();
 
   if (appLoading) {
     return <Loading />;
@@ -23,11 +28,16 @@ function App() {
   }
 
   return (
-    <>
-      <StompSessionProvider brokerURL={`${API_WS_URL}/chat/ws/${ticket}`}>
-        <Chat user={currentUser} logout={handleLogout} />
+    <div className="zidd-app">
+      <StompSessionProvider
+        brokerURL={`${API_WS_URL}/chat/ws/${ticket}`}
+      >
+        <Chat
+          user={currentUser}
+          logout={handleLogout}
+        />
       </StompSessionProvider>
-    </>
+    </div>
   );
 }
 

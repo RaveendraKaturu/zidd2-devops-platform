@@ -8,129 +8,170 @@ import {
   MessageInput,
   MessageList,
 } from "@chatscope/chat-ui-kit-react";
+
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
+
 import { useSubscription } from "react-stomp-hooks";
 import { createAvatar, formatUsername } from "../utils/helpers";
 import { useChat } from "../hooks/useChat";
 
 const Chat = ({ user, logout }) => {
   const { data, sendMessage, onMessageReceived } = useChat(user);
+
   useSubscription("/topic/newMessage", onMessageReceived);
 
-  return (
-    <div
-      style={{
-        height: "100dvh",
-      }}
-    >
-      <MainContainer>
-        <ChatContainer
-          style={{
-            paddingTop: "10px",
-          }}
-        >
-          <ConversationHeader>
-            <Avatar src={createAvatar(user?.id)} />
-            <ConversationHeader.Content
-              userName={formatUsername(user?.fullName) || ""}
-            />
-            <ConversationHeader.Actions>
-              <ArrowButton onClick={() => logout()} />
-            </ConversationHeader.Actions>
-          </ConversationHeader>
-          <MessageList loading={!data}>
-            {data && data.messages.length === 0 && (
-              <MessageList.Content
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  height: "100%",
-                  textAlign: "center",
-                  fontSize: "1.2em",
-                }}
-              >
-                <p>No messages yet</p>
-              </MessageList.Content>
-            )}
-            {data &&
-              data.messages.map((message, index) => {
-                let isMe = message.user.id === user.id.toString();
-                let prevMessage = data.messages[index - 1];
-                let isFirst =
-                  !prevMessage || prevMessage.user.id !== message.user.id;
-                let isLast =
-                  data.messages[index + 1]?.user.id !== message.user.id;
-                let isSingle = isFirst && isLast;
+  const username = formatUsername(user?.fullName) || "User";
 
-                if (isMe) {
+  return (
+    <div className="zidd-app">
+      {/* =========================
+          TOP HEADER
+          ========================= */}
+
+      <header className="zidd-header">
+        <div className="zidd-brand-section">
+          <div className="zidd-brand">
+            ZIDD <span className="zidd-brand-accent">2.0</span>
+          </div>
+
+          <div className="zidd-batch">
+            BATCH 2 • BUILD • DEPLOY • COLLABORATE
+          </div>
+        </div>
+
+        <div className="zidd-user-section">
+          <Avatar src={createAvatar(user?.id)} />
+
+          <div className="zidd-user-info">
+            <div className="zidd-username">{username}</div>
+
+            <div className="zidd-online">
+              <span className="zidd-online-dot">●</span>
+              Online
+            </div>
+          </div>
+
+          <button className="zidd-logout" onClick={logout}>
+            Logout
+          </button>
+        </div>
+      </header>
+
+      {/* =========================
+          CHAT WINDOW
+          ========================= */}
+
+      <main className="zidd-chat-wrapper">
+        <MainContainer>
+          <ChatContainer>
+            {/* =========================
+                CHAT HEADER
+                ========================= */}
+
+            <ConversationHeader>
+              <Avatar src={createAvatar(user?.id)} />
+
+              <ConversationHeader.Content
+                userName="ZIDD 2.0 — Team Chat"
+                info="Batch 2 • Team Collaboration • DevOps Workspace"
+              />
+
+              <ConversationHeader.Actions>
+                <ArrowButton onClick={logout} />
+              </ConversationHeader.Actions>
+            </ConversationHeader>
+
+            {/* =========================
+                MESSAGES
+                ========================= */}
+
+            <MessageList loading={!data}>
+              {/* Empty State */}
+
+              {data && data.messages.length === 0 && (
+                <MessageList.Content className="zidd-empty-state">
+                  <div className="zidd-empty-icon">💬</div>
+
+                  <h3>No messages yet</h3>
+
+                  <p>
+                    Start the conversation with your ZIDD Batch 2 team.
+                  </p>
+                </MessageList.Content>
+              )}
+
+              {/* Message List */}
+
+              {data &&
+                data.messages.map((message, index) => {
+                  const isMe =
+                    message.user.id.toString() === user.id.toString();
+
+                  const previousMessage = data.messages[index - 1];
+                  const nextMessage = data.messages[index + 1];
+
+                  const isFirst =
+                    !previousMessage ||
+                    previousMessage.user.id !== message.user.id;
+
+                  const isLast =
+                    !nextMessage ||
+                    nextMessage.user.id !== message.user.id;
+
+                  const formattedTime = new Date(
+                    message.createdAt
+                  ).toLocaleString("en-US", {
+                    hour: "numeric",
+                    minute: "numeric",
+                  });
+
                   return (
                     <Message
-                      key={index}
+                      key={message.id || index}
                       model={{
                         message: message.content,
                         sender: message.user.name,
-                        direction: "outgoing",
+                        sentTime: formattedTime,
+                        direction: isMe ? "outgoing" : "incoming",
                         position: isLast
                           ? "last"
                           : isFirst
                           ? "first"
                           : "normal",
                       }}
-                    />
-                  );
-                } else {
-                  return (
-                    <Message
-                      key={index}
-                      model={{
-                        message: message.content,
-                        direction: "incoming",
-                        position: isLast
-                          ? "last"
-                          : isFirst
-                          ? "first"
-                          : "normal",
-                      }}
-                      avatarSpacer={
-                        (!isFirst && !isLast) || (!isSingle && !isLast)
-                      }
+                      avatarSpacer={!isMe && !isLast}
                       avatarPosition="tl"
                     >
-                      {(isSingle || isLast) && (
+                      {/* Incoming user avatar */}
+
+                      {!isMe && isLast && (
                         <Avatar
-                          status={message.user.isOnline ? "available" : "dnd"}
+                          status={
+                            message.user.isOnline
+                              ? "available"
+                              : "dnd"
+                          }
                           src={message.user.avatar}
                           name={message.user.name}
                         />
                       )}
-                      {(isSingle || isLast) && (
-                        <Message.HtmlContent
-                          html={`<strong style='display:flex; padding-bottom:5px'>${
-                            message.user.name
-                          }</strong>${
-                            message.content
-                          }  <small style='display: inline-block; margin-right:20px; width: 100%; text-align:right'>${new Date(
-                            message.createdAt
-                          ).toLocaleString("en-US", {
-                            hour: "numeric",
-                            minute: "numeric",
-                          })}</small>`}
-                        />
-                      )}
                     </Message>
                   );
-                }
-              })}
-          </MessageList>
+                })}
+            </MessageList>
 
-          <MessageInput
-            placeholder="Type your message here..."
-            onSend={sendMessage}
-            attachButton={false}
-          />
-        </ChatContainer>
-      </MainContainer>
+            {/* =========================
+                MESSAGE INPUT
+                ========================= */}
+
+            <MessageInput
+              placeholder="Message your ZIDD team..."
+              onSend={sendMessage}
+              attachButton={false}
+            />
+          </ChatContainer>
+        </MainContainer>
+      </main>
     </div>
   );
 };
