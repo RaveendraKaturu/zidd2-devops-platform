@@ -1,4 +1,4 @@
-# Spring Boot Chat Application
+# ZIDD 2.0 — DevOps Platform
 
 This repository hosts the code for a chat application that utilizes Spring Boot for backend services and includes a client application. The backend is split into two services: `auth-service` for managing user authentication, and `chat-service` for managing chat messages. The client application provides a basic web interface built using React. All services are containerized using Docker and managed with Docker Compose. The application is accessed through a single entry point on port 80, which is managed by Nginx. Nginx serves the static files for the frontend application and also functions as an API gateway, managing communication with and between the backend services.
 
@@ -23,8 +23,8 @@ To get started with the application, you need to have Docker and Docker Compose 
 1. Clone the repository:
 
 ```sh
-git clone https://github.com/misterneo/spring-microservices-chat-app.git
-cd spring-microservices-chat-app
+git clone https://github.com/yashtrivedi0402/zidd2-devops-platform.git
+cd zidd2-devops-platform
 ```
 
 2. Build the services:
