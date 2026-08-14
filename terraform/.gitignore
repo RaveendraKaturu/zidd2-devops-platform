@@ -1,0 +1,24 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Plan output
+tfplan
+*.tfplan
+
+# Local var files with secrets — keep the example, ignore the real one
+terraform.tfvars
+*.auto.tfvars
+
+# CLI config / overrides
+.terraformrc
+terraform.rc
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Keep the provider lock file committed (do NOT ignore .terraform.lock.hcl)
