@@ -605,3 +605,81 @@ button {
     font-size: 14px !important;
   }
 }
+/* =====================================================
+   ZIDD MESSAGE SENDER
+   ===================================================== */
+
+.zidd-incoming-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+
+/* Sender name above incoming message */
+
+.zidd-sender-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  margin-left: 52px;
+  margin-bottom: 4px;
+
+  color: #c7d2fe;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  line-height: 1.2;
+
+  letter-spacing: 0.2px;
+}
+
+
+/* Message time */
+
+.zidd-message-time {
+  color: #64748b;
+
+  font-size: 10px;
+  font-weight: 400;
+
+  white-space: nowrap;
+}
+
+
+/* Keep Chatscope message aligned */
+
+.zidd-incoming-wrapper
+.cs-message {
+  width: 100%;
+}
+
+
+/* Make sure sender cannot be hidden */
+
+.zidd-sender-name {
+  position: relative;
+  z-index: 10;
+
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+
+/* Mobile */
+
+@media (max-width: 600px) {
+
+  .zidd-sender-name {
+    margin-left: 44px;
+    font-size: 11px;
+  }
+
+  .zidd-message-time {
+    font-size: 9px;
+  }
+
+}
