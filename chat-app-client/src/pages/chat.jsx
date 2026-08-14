@@ -217,7 +217,7 @@ const Chat = ({ user, logout }) => {
 
                         {isFirst && (
                           <div className="zidd-sender-name">
-                            @{message.user.name || "User"}
+                             {message.user.name || "User"}
 
                             <span className="zidd-message-time">
                               {formattedTime}
