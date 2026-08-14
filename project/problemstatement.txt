@@ -1,0 +1,58 @@
+*DevOps Project ZIDD2.0*
+
+The project will cover the *entire application*, including the *frontend, backend, and database* layers.
+
+*Task 1 — Containerization*
+
+Containerize the entire application using *best production practices*.
+
+- Use appropriate and lightweight base images.
+- Follow Docker security best practices.
+- Use multi-stage builds wherever applicable.
+- Keep images lightweight and optimized.
+- Configure users and permissions securely.
+- Follow other relevant production-grade Docker practices.
+
+*Task 2 — Deployment*
+
+Deploy the complete application on *any one* of the following:
+
+- *EC2*
+- *ECS*
+- *EKS*
+
+Choose the platform based on your implementation and requirements.
+
+*Task 3 — DevOps & Observability*
+
+Implement the important DevOps practices required to run the application in production.
+
+This should include:
+
+- *Autoscaling*
+- *Monitoring*
+
+You can use *any monitoring tool of your choice*.
+
+*Task 4 — Security*
+
+Implement and explore security practices for the application and infrastructure.
+
+You can use any of the following AWS security services/tools:
+
+- *AWS CloudTrail*
+- *Amazon GuardDuty*
+- *AWS WAF*
+- *AWS Security Hub*
+
+The goal is to understand how these tools can be used to monitor, detect, and improve the security of the deployed application and infrastructure.
+
+*Task 5 — CI/CD*
+
+Implement the *complete CI/CD flow* for the application.
+
+The pipeline should cover the entire process from:
+
+*Code → Build → Test → Container Image → Push → Deploy → Verify*
+
+Use any CI/CD tool of your choice and automate the deployment process as much as possible.
