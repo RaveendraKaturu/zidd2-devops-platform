@@ -75,22 +75,24 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: maven
+
       - name: Scan auth-service
         working-directory: auth-service
         run: >
-          mvn -B verify sonar:sonar -DskipTests
+          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -DskipTests
           -Dsonar.projectKey=zidd2-auth-${{ needs.setup.outputs.environment }}
           -Dsonar.host.url=${{ vars.SONAR_HOST_URL }}
           -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+          
       - name: Scan chat-service
         working-directory: chat-service
         run: >
-          mvn -B verify sonar:sonar -DskipTests
+          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -DskipTests
           -Dsonar.projectKey=zidd2-chat-${{ needs.setup.outputs.environment }}
           -Dsonar.host.url=${{ vars.SONAR_HOST_URL }}
           -Dsonar.token=${{ secrets.SONAR_TOKEN }}
 
-          
+
   # ---- Stage 4: Build & push images to ECR ----
   build-push:
     needs: [setup, sonar]
