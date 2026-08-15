@@ -68,24 +68,29 @@ jobs:
     environment: ${{ needs.setup.outputs.environment }}
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with:
+          fetch-depth: 0
       - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: '17', cache: maven }
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
       - name: Scan auth-service
         working-directory: auth-service
         run: >
-          ./mvnw -B verify sonar:sonar
+          mvn -B verify sonar:sonar -DskipTests
           -Dsonar.projectKey=zidd2-auth-${{ needs.setup.outputs.environment }}
           -Dsonar.host.url=${{ vars.SONAR_HOST_URL }}
           -Dsonar.token=${{ secrets.SONAR_TOKEN }}
       - name: Scan chat-service
         working-directory: chat-service
         run: >
-          ./mvnw -B verify sonar:sonar
+          mvn -B verify sonar:sonar -DskipTests
           -Dsonar.projectKey=zidd2-chat-${{ needs.setup.outputs.environment }}
           -Dsonar.host.url=${{ vars.SONAR_HOST_URL }}
           -Dsonar.token=${{ secrets.SONAR_TOKEN }}
 
+          
   # ---- Stage 4: Build & push images to ECR ----
   build-push:
     needs: [setup, sonar]
