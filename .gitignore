@@ -1,3 +1,32 @@
-/mongodb-data
-/mysql-data
+﻿# Terraform
+**/.terraform/**
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+**/terraform.tfvars
+*.auto.tfvars
+
+# Secrets / keys
+*.pem
+*.key
+.env
+.env.*
+external-secrets.yaml
+eso-crds.yaml
+helm/monitoring-values.yaml
+
+# Local DB data (docker-compose)
+mongodb-data/
+mysql-data/
+
+# Build artifacts
+**/target/**
+**/node_modules/**
+**/dist/**
+
+# OS / editor
 .DS_Store
+Thumbs.db
+.idea/
+.vscode/

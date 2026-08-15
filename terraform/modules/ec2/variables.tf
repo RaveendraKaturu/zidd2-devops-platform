@@ -30,3 +30,15 @@ variable "ingress_rules" {
   }))
   default = []
 }
+
+variable "associate_eip" {
+  type        = bool
+  default     = false
+  description = "Attach a static Elastic IP to the instance"
+}
+
+variable "enable_ssm" {
+  type        = bool
+  default     = false
+  description = "Attach an IAM instance profile with SSM Session Manager permissions"
+}

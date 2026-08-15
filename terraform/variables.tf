@@ -72,8 +72,9 @@ variable "create_github_oidc_provider" {
 
 # --- EKS ---
 variable "k8s_version" {
-  type    = string
-  default = "1.30"
+  type        = string
+  default     = "AL2023_x86_64_STANDARD"
+  description = "EKS-optimized AMI family for the node group"
 }
 variable "node_instance_types" {
   type    = list(string)

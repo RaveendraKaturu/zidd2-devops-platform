@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: redisdb
+spec:
+  selector: { app: redisdb }
+  ports: [{ port: 6379, targetPort: 6379 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redisdb
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: redisdb } }
+  template:
+    metadata:
+      labels: { app: redisdb }
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports: [{ containerPort: 6379 }]
+          readinessProbe:
+            exec: { command: ["redis-cli","ping"] }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests: { cpu: "50m",  memory: "64Mi" }
+            limits:   { cpu: "250m", memory: "128Mi" }

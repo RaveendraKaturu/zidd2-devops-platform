@@ -18,13 +18,13 @@ terraform {
   # `terraform init -migrate-state`. Left commented so the first init works
   # before the bucket exists.
   #
-  # backend "s3" {
-  #   bucket         = "zidd2-tfstate-xxxxxx"
-  #   key            = "infra/terraform.tfstate"
-  #   region         = "ap-south-1"
-  #   dynamodb_table = "zidd2-tf-lock"
-  #   encrypt        = true
-  # }
+  backend "s3" {
+    bucket         = "zidd2-tfstate-34aa29"
+    key            = "infra/terraform.tfstate"
+    region         = "ap-south-1"
+    dynamodb_table = "zidd2-tf-lock"
+    encrypt        = true
+  }
 }
 
 # --- Primary region (VPC, EKS, ECR, EC2, ALB) ---

@@ -105,6 +105,8 @@ module "sonarqube" {
   instance_type       = var.sonar_instance_type
   key_name            = var.sonar_key_name
   associate_public_ip = true
+  associate_eip       = true
+  enable_ssm          = true
   volume_size         = 30
   user_data           = local.sonar_user_data
   ingress_rules = [
@@ -126,15 +128,16 @@ module "sonarqube" {
 # (AWS Load Balancer Controller + metrics-server -> lb-controller.tf)
 # ---------------------------------------------------------------------------
 module "eks" {
-  source              = "./modules/eks"
-  name                = var.name
-  k8s_version         = var.k8s_version
-  private_subnet_ids  = module.vpc.private_subnet_ids
-  public_subnet_ids   = module.vpc.public_subnet_ids
-  node_instance_types = var.node_instance_types
-  node_desired_size   = var.node_desired_size
-  node_min_size       = var.node_min_size
-  node_max_size       = var.node_max_size
+  source                = "./modules/eks"
+  name                  = var.name
+  k8s_version           = var.k8s_version
+  private_subnet_ids    = module.vpc.private_subnet_ids
+  public_subnet_ids     = module.vpc.public_subnet_ids
+  node_instance_types   = var.node_instance_types
+  node_desired_size     = var.node_desired_size
+  node_min_size         = var.node_min_size
+  node_max_size         = var.node_max_size
+  alb_security_group_id = module.alb.security_group_id
 }
 
 # ---------------------------------------------------------------------------
@@ -213,5 +216,20 @@ resource "godaddy_domain_record" "this" {
     type = "CNAME"
     data = module.cloudfront.domain_name
     ttl  = 600
+  }
+}
+
+# Let the GitHub Actions role run kubectl/helm against the cluster
+resource "aws_eks_access_entry" "github_ci" {
+  cluster_name  = module.eks.cluster_name
+  principal_arn = module.iam.ci_role_arn
+  type          = "STANDARD"
+}
+resource "aws_eks_access_policy_association" "github_ci" {
+  cluster_name  = module.eks.cluster_name
+  principal_arn = module.iam.ci_role_arn
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  access_scope {
+    type = "cluster"
   }
 }

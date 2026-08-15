@@ -3,7 +3,7 @@ services:
     image: mysql:8.0.32
     restart: always
     environment:
-      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_ROOT_PASSWORD=""
       - MYSQL_DATABASE=spring_auth_api
     volumes:
       - ./mysql-data:/var/lib/mysql
@@ -24,8 +24,8 @@ services:
         condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysqldb:3306/spring_auth_api
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATASOURCE_USERNAME: ""
+      SPRING_DATASOURCE_PASSWORD: ""
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
     networks:
       - springboot-network

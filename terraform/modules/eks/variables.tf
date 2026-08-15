@@ -3,7 +3,7 @@ variable "name" {
 }
 variable "k8s_version" {
   type    = string
-  default = "1.30"
+  default = "1.31"
 }
 variable "private_subnet_ids" {
   type = list(string)
@@ -20,9 +20,14 @@ variable "node_instance_types" {
   type    = list(string)
   default = ["t3.large"]
 }
+variable "node_ami_type" {
+  type        = string
+  default     = "AL2023_x86_64_STANDARD"
+  description = "EKS-optimized AMI family for the node group"
+}
 variable "node_desired_size" {
   type    = number
-  default = 3
+  default = 2
 }
 variable "node_min_size" {
   type    = number
@@ -32,19 +37,9 @@ variable "node_max_size" {
   type    = number
   default = 5
 }
-variable "addon_versions" {
-  type = object({
-    vpc_cni    = string
-    coredns    = string
-    kube_proxy = string
-    ebs_csi    = string
-  })
-  # Look up compatible versions for your k8s_version with:
-  #   aws eks describe-addon-versions --addon-name vpc-cni --kubernetes-version 1.30
-  default = {
-    vpc_cni    = "v1.18.3-eksbuild.2"
-    coredns    = "v1.11.1-eksbuild.9"
-    kube_proxy = "v1.30.3-eksbuild.5"
-    ebs_csi    = "v1.33.0-eksbuild.1"
-  }
+
+variable "alb_security_group_id" {
+  description = "Security group ID of the Application Load Balancer"
+  type        = string
 }
+

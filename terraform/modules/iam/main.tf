@@ -78,3 +78,6 @@ resource "aws_iam_role_policy" "ci" {
   role   = aws_iam_role.ci.id
   policy = data.aws_iam_policy_document.ci.json
 }
+
+
+

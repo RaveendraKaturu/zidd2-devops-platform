@@ -37,6 +37,10 @@ resource "aws_eks_cluster" "this" {
   name     = var.name
   version  = var.k8s_version
   role_arn = aws_iam_role.cluster.arn
+  access_config {
+    authentication_mode = "API_AND_CONFIG_MAP"
+    bootstrap_cluster_creator_admin_permissions = true
+  }
 
   vpc_config {
     subnet_ids              = concat(var.private_subnet_ids, var.public_subnet_ids)
@@ -99,6 +103,7 @@ resource "aws_eks_node_group" "this" {
   node_role_arn   = aws_iam_role.node.arn
   subnet_ids      = var.private_subnet_ids
   instance_types  = var.node_instance_types
+  ami_type        = var.node_ami_type
 
   scaling_config {
     desired_size = var.node_desired_size
@@ -111,6 +116,22 @@ resource "aws_eks_node_group" "this" {
   }
 
   depends_on = [aws_iam_role_policy_attachment.node]
+}
+
+
+# ---------------------------------------------------------------------------
+# Allow ALB to access EKS frontend on HTTP port 80
+# ---------------------------------------------------------------------------
+resource "aws_security_group_rule" "alb_to_eks_http" {
+  type                     = "ingress"
+  from_port                = 80
+  to_port                  = 80
+  protocol                 = "tcp"
+
+  security_group_id        = aws_eks_cluster.this.vpc_config[0].cluster_security_group_id
+  source_security_group_id = var.alb_security_group_id
+
+  description = "Allow ALB to access EKS workloads on HTTP port 80"
 }
 
 # ---------------------------------------------------------------------------
@@ -150,33 +171,35 @@ resource "aws_iam_role_policy_attachment" "ebs_csi" {
 # ---------------------------------------------------------------------------
 # Managed add-ons
 # ---------------------------------------------------------------------------
+# addon_version omitted -> EKS installs the default version compatible with the
+# cluster's Kubernetes version (avoids "unsupported version" across regions).
 resource "aws_eks_addon" "vpc_cni" {
-  cluster_name  = aws_eks_cluster.this.name
-  addon_name    = "vpc-cni"
-  addon_version = var.addon_versions.vpc_cni
-  depends_on    = [aws_eks_node_group.this]
+  cluster_name                = aws_eks_cluster.this.name
+  addon_name                  = "vpc-cni"
+  resolve_conflicts_on_create = "OVERWRITE"
+  depends_on                  = [aws_eks_node_group.this]
 }
 
 resource "aws_eks_addon" "coredns" {
-  cluster_name  = aws_eks_cluster.this.name
-  addon_name    = "coredns"
-  addon_version = var.addon_versions.coredns
-  depends_on    = [aws_eks_node_group.this]
+  cluster_name                = aws_eks_cluster.this.name
+  addon_name                  = "coredns"
+  resolve_conflicts_on_create = "OVERWRITE"
+  depends_on                  = [aws_eks_node_group.this]
 }
 
 resource "aws_eks_addon" "kube_proxy" {
-  cluster_name  = aws_eks_cluster.this.name
-  addon_name    = "kube-proxy"
-  addon_version = var.addon_versions.kube_proxy
-  depends_on    = [aws_eks_node_group.this]
+  cluster_name                = aws_eks_cluster.this.name
+  addon_name                  = "kube-proxy"
+  resolve_conflicts_on_create = "OVERWRITE"
+  depends_on                  = [aws_eks_node_group.this]
 }
 
 resource "aws_eks_addon" "ebs_csi" {
-  cluster_name             = aws_eks_cluster.this.name
-  addon_name               = "aws-ebs-csi-driver"
-  addon_version            = var.addon_versions.ebs_csi
-  service_account_role_arn = aws_iam_role.ebs_csi.arn
-  depends_on               = [aws_eks_node_group.this]
+  cluster_name                = aws_eks_cluster.this.name
+  addon_name                  = "aws-ebs-csi-driver"
+  service_account_role_arn    = aws_iam_role.ebs_csi.arn
+  resolve_conflicts_on_create = "OVERWRITE"
+  depends_on                  = [aws_eks_node_group.this]
 }
 
 # ---------------------------------------------------------------------------

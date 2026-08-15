@@ -1,0 +1,21 @@
+# ---- Set these from your terraform outputs ----
+ecrRegistry: "928341811904.dkr.ecr.ap-south-1.amazonaws.com"
+imageTag: "v1"
+targetGroupArn: "arn:aws:elasticloadbalancing:ap-south-1:928341811904:targetgroup/zidd2-frontend-tg/e79860867f69ca27"
+
+storageClass: "gp3"        # created by this chart (EBS CSI)
+createStorageClass: true
+
+# Demo credentials (mirror docker-compose). For real prod, source from AWS
+# Secrets Manager via External Secrets — noted in the README.
+mysql:
+  rootPassword: ""
+  database: "spring_auth_api"
+auth:
+  jwtSecret: ""
+
+# Replicas kept at 1 to fit t3.medium; HPA can scale up under load.
+replicas:
+  auth: 1
+  chat: 1
+  frontend: 1
