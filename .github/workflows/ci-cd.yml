@@ -83,7 +83,7 @@ jobs:
           -Dsonar.projectKey=zidd2-auth-${{ needs.setup.outputs.environment }}
           -Dsonar.host.url=${{ vars.SONAR_HOST_URL }}
           -Dsonar.token=${{ secrets.SONAR_TOKEN }}
-          
+
       - name: Scan chat-service
         working-directory: chat-service
         run: >
@@ -93,11 +93,14 @@ jobs:
           -Dsonar.token=${{ secrets.SONAR_TOKEN }}
 
 
-  # ---- Stage 4: Build & push images to ECR ----
+ # ---- Stage 4: Build & push images to ECR ----
   build-push:
     needs: [setup, sonar]
     runs-on: ubuntu-latest
     environment: ${{ needs.setup.outputs.environment }}
+    permissions:
+      id-token: write
+      contents: read
     env:
       ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
       IMAGE_TAG: ${{ github.sha }}
@@ -123,6 +126,9 @@ jobs:
     needs: [setup, build-push]
     runs-on: ubuntu-latest
     environment: ${{ needs.setup.outputs.environment }}
+    permissions:
+      id-token: write
+      contents: read
     env:
       ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
       IMAGE_TAG: ${{ github.sha }}
@@ -133,7 +139,8 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
       - uses: azure/setup-helm@v4
-        with: { version: v3.15.4 }
+        with:
+          version: v3.15.4
       - run: aws eks update-kubeconfig --name ${{ vars.EKS_CLUSTER }} --region ${{ vars.AWS_REGION }}
       - name: Helm deploy
         run: >
