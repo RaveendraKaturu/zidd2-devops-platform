@@ -30,6 +30,19 @@ jobs:
             echo "environment=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
           fi
 
+# ---- Stage 1: Git leak scan ----
+  git-leak:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   # ---- Stage 2: Unit tests ----
   unit-test:
     needs: git-leak
@@ -37,25 +50,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: '17', cache: maven }
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
       - name: Test auth-service
         working-directory: auth-service
-        run: ./mvnw -B test
+        run: mvn -B test
       - name: Test chat-service
         working-directory: chat-service
-        run: ./mvnw -B test
-
-  # ---- Stage 1: Git leak scan ----
-  git-leak:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: mvn -B test
 
   # ---- Stage 3: SonarQube scan ----
   sonar:
