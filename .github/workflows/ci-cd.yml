@@ -167,7 +167,7 @@ jobs:
           --set imageTag=$IMAGE_TAG
           --set mysql.rootPassword=${{ secrets.MYSQL_ROOT_PASSWORD }}
           --set auth.jwtSecret=${{ secrets.JWT_SECRET }}
-          --wait --timeout 5m
+          --atomic --wait --timeout 4m
       - name: Verify rollout
         run: |
           kubectl rollout status deployment/auth-service -n zidd2 --timeout=180s
