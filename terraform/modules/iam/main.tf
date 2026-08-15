@@ -34,10 +34,10 @@ data "aws_iam_policy_document" "assume" {
       variable = "token.actions.githubusercontent.com:aud"
       values   = ["sts.amazonaws.com"]
     }
-    condition {
+condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_org}/${var.github_repo}:*"]
+      values   = ["repo:RaveendraKaturu@117171623/zidd2-devops-platform@1333877621:*"]
     }
   }
 }
