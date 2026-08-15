@@ -119,6 +119,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      security-events: write
     env:
       ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
       IMAGE_TAG: ${{ github.sha }}
@@ -129,15 +130,57 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
       - uses: aws-actions/amazon-ecr-login@v2
-      - run: |
-          docker build -t $ECR_REGISTRY/zidd-auth-service:$IMAGE_TAG ./auth-service
-          docker push $ECR_REGISTRY/zidd-auth-service:$IMAGE_TAG
-      - run: |
-          docker build -t $ECR_REGISTRY/zidd-chat-service:$IMAGE_TAG ./chat-service
-          docker push $ECR_REGISTRY/zidd-chat-service:$IMAGE_TAG
-      - run: |
-          docker build -t $ECR_REGISTRY/zid-frontend:$IMAGE_TAG ./chat-app-client
-          docker push $ECR_REGISTRY/zid-frontend:$IMAGE_TAG
+
+      - name: Build auth-service
+        run: docker build -t $ECR_REGISTRY/zidd-auth-service:$IMAGE_TAG ./auth-service
+      - name: Trivy scan auth-service
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.ECR_REGISTRY }}/zidd-auth-service:${{ env.IMAGE_TAG }}
+          format: sarif
+          output: trivy-auth.sarif
+          severity: CRITICAL,HIGH
+      - name: Upload auth-service results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-auth.sarif
+          category: auth-service
+      - name: Push auth-service
+        run: docker push $ECR_REGISTRY/zidd-auth-service:$IMAGE_TAG
+
+      - name: Build chat-service
+        run: docker build -t $ECR_REGISTRY/zidd-chat-service:$IMAGE_TAG ./chat-service
+      - name: Trivy scan chat-service
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.ECR_REGISTRY }}/zidd-chat-service:${{ env.IMAGE_TAG }}
+          format: sarif
+          output: trivy-chat.sarif
+          severity: CRITICAL,HIGH
+      - name: Upload chat-service results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-chat.sarif
+          category: chat-service
+      - name: Push chat-service
+        run: docker push $ECR_REGISTRY/zidd-chat-service:$IMAGE_TAG
+
+      - name: Build frontend
+        run: docker build -t $ECR_REGISTRY/zid-frontend:$IMAGE_TAG ./chat-app-client
+      - name: Trivy scan frontend
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.ECR_REGISTRY }}/zid-frontend:${{ env.IMAGE_TAG }}
+          format: sarif
+          output: trivy-frontend.sarif
+          severity: CRITICAL,HIGH
+      - name: Upload frontend results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-frontend.sarif
+          category: frontend
+      - name: Push frontend
+        run: docker push $ECR_REGISTRY/zid-frontend:$IMAGE_TAG
 
   # ---- Stage 5: Deploy to EKS with Helm ----
   deploy:
