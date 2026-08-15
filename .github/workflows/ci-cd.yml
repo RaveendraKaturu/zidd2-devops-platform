@@ -111,8 +111,6 @@ jobs:
           SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           
-
-
  # ---- Stage 4: Build & push images to ECR ----
   build-push:
     needs: [setup, sonar]
@@ -140,7 +138,7 @@ jobs:
       - run: |
           docker build -t $ECR_REGISTRY/zid-frontend:$IMAGE_TAG ./chat-app-client
           docker push $ECR_REGISTRY/zid-frontend:$IMAGE_TAG
-          
+
   # ---- Stage 5: Deploy to EKS with Helm ----
   deploy:
     needs: [setup, build-push]
