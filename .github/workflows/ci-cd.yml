@@ -105,6 +105,14 @@ jobs:
       ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
       IMAGE_TAG: ${{ github.sha }}
     steps:
+      - name: Debug OIDC subject
+        run: |
+          echo "repository: ${{ github.repository }}"
+          echo "ref: ${{ github.ref }}"
+          echo "environment: ${{ needs.setup.outputs.environment }}"
+          TOKEN=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r '.value')
+          echo "----- token sub -----"
+          echo "$TOKEN" | cut -d. -f2 | base64 -d 2>/dev/null | jq '{sub, aud}'
       - uses: actions/checkout@v4
       - uses: aws-actions/configure-aws-credentials@v4
         with:
