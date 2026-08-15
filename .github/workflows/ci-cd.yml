@@ -61,7 +61,7 @@ jobs:
         working-directory: chat-service
         run: mvn -B package -DskipTests
 
-# ---- Stage 3: SonarQube scan ----
+ # ---- Stage 3: SonarQube scan ----
   sonar:
     needs: [setup, unit-test]
     runs-on: ubuntu-latest
