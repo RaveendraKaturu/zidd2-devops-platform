@@ -134,7 +134,7 @@ jobs:
       - name: Build auth-service
         run: docker build -t $ECR_REGISTRY/zidd-auth-service:$IMAGE_TAG ./auth-service
       - name: Trivy scan auth-service
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.ECR_REGISTRY }}/zidd-auth-service:${{ env.IMAGE_TAG }}
           format: sarif
@@ -151,7 +151,7 @@ jobs:
       - name: Build chat-service
         run: docker build -t $ECR_REGISTRY/zidd-chat-service:$IMAGE_TAG ./chat-service
       - name: Trivy scan chat-service
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.ECR_REGISTRY }}/zidd-chat-service:${{ env.IMAGE_TAG }}
           format: sarif
@@ -168,7 +168,7 @@ jobs:
       - name: Build frontend
         run: docker build -t $ECR_REGISTRY/zid-frontend:$IMAGE_TAG ./chat-app-client
       - name: Trivy scan frontend
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.ECR_REGISTRY }}/zid-frontend:${{ env.IMAGE_TAG }}
           format: sarif
