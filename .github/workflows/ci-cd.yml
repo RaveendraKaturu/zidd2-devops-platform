@@ -84,13 +84,25 @@ jobs:
           -Dsonar.host.url=${{ vars.SONAR_HOST_URL }}
           -Dsonar.token=${{ secrets.SONAR_TOKEN }}
 
-      - name: Scan chat-service
-        working-directory: chat-service
-        run: >
-          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -DskipTests
-          -Dsonar.projectKey=zidd2-chat-${{ needs.setup.outputs.environment }}
-          -Dsonar.host.url=${{ vars.SONAR_HOST_URL }}
-          -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+      - name: Scan frontend
+        uses: SonarSource/sonarqube-scan-action@v3
+        with:
+          projectBaseDir: chat-app-client
+          args: >
+            -Dsonar.projectKey=zidd2-frontend-${{ needs.setup.outputs.environment }}
+            -Dsonar.sources=src
+        env:
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Scan frontend
+        uses: SonarSource/sonarqube-scan-action@v3
+        with:
+          projectBaseDir: chat-app-client
+        env:
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          
 
 
  # ---- Stage 4: Build & push images to ECR ----
@@ -104,17 +116,6 @@ jobs:
     env:
       ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
       IMAGE_TAG: ${{ github.sha }}
-    steps:
-      - name: Debug OIDC subject
-        run: |
-          echo "repository: ${{ github.repository }}"
-          echo "ref: ${{ github.ref }}"
-          echo "environment: ${{ needs.setup.outputs.environment }}"
-          TOKEN=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r '.value')
-          echo "----- token sub -----"
-          echo "$TOKEN" | cut -d. -f2 | base64 -d 2>/dev/null | jq '{sub, aud}'
-      - uses: actions/checkout@v4
-      - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
