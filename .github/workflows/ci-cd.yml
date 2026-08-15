@@ -61,7 +61,7 @@ jobs:
         working-directory: chat-service
         run: mvn -B package -DskipTests
 
-  # ---- Stage 3: SonarQube scan ----
+# ---- Stage 3: SonarQube scan ----
   sonar:
     needs: [setup, unit-test]
     runs-on: ubuntu-latest
@@ -81,6 +81,14 @@ jobs:
         run: >
           mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -DskipTests
           -Dsonar.projectKey=zidd2-auth-${{ needs.setup.outputs.environment }}
+          -Dsonar.host.url=${{ vars.SONAR_HOST_URL }}
+          -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+
+      - name: Scan chat-service
+        working-directory: chat-service
+        run: >
+          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -DskipTests
+          -Dsonar.projectKey=zidd2-chat-${{ needs.setup.outputs.environment }}
           -Dsonar.host.url=${{ vars.SONAR_HOST_URL }}
           -Dsonar.token=${{ secrets.SONAR_TOKEN }}
 
