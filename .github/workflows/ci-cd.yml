@@ -124,6 +124,9 @@ jobs:
     env:
       ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
       IMAGE_TAG: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
@@ -137,7 +140,7 @@ jobs:
       - run: |
           docker build -t $ECR_REGISTRY/zid-frontend:$IMAGE_TAG ./chat-app-client
           docker push $ECR_REGISTRY/zid-frontend:$IMAGE_TAG
-
+          
   # ---- Stage 5: Deploy to EKS with Helm ----
   deploy:
     needs: [setup, build-push]
