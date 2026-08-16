@@ -1,798 +1,192 @@
-# ⚡ ZIDD 2.0 — DevOps Platform
+# ZIDD 2.0 — Cloud-Native DevSecOps Platform on AWS EKS
 
-<p align="center">
-  <strong>Batch 2 • Build • Deploy • Collaborate</strong>
-</p>
+A production-shaped deployment of a real-time microservices chat application, built end to end with Infrastructure as Code, a full CI/CD pipeline with integrated security scanning, monitoring, and edge protection. Everything below is live and reproducible from Terraform + Helm + GitHub Actions.
 
-<p align="center">
-  A containerized real-time team collaboration platform built with Spring Boot, React, Docker, Nginx, MySQL, MongoDB and Redis.
-</p>
+**Live application:** `https://zidd2.raveendra.website`
 
 ---
 
-## 📌 About The Project
+## 1. What this project demonstrates
 
-**ZIDD 2.0** is a real-time team collaboration and chat platform developed as a **microservices-based application**.
+This is a complete DevSecOps lifecycle for a containerized microservices application:
 
-The platform separates authentication and chat functionality into independent backend services while providing a React-based frontend for users.
-
-The complete application is containerized using **Docker** and orchestrated using **Docker Compose**.
-
-Nginx acts as the application's single entry point, serving the frontend and routing API and WebSocket traffic to the appropriate backend services.
-
-The project is designed as a foundation for further DevOps implementation including CI/CD, container registry integration, Kubernetes deployment, monitoring, logging and observability.
-
----
-
-## ✨ Features
-
-- 🔐 User registration and authentication
-- 🔑 JWT-based authentication
-- 💬 Real-time team messaging
-- ⚡ WebSocket / STOMP communication
-- 👤 User identity and online status
-- 🕐 Message timestamps
-- ⚛️ React-based frontend
-- 🎨 ZIDD 2.0 Batch 2 themed UI
-- 🌐 Nginx reverse proxy
-- 🐳 Dockerized microservices
-- 🗄️ MySQL database for authentication
-- 🍃 MongoDB database for chat messages
-- ⚡ Redis for caching
-- 🔄 Docker Compose based orchestration
-- 📦 Independent backend services
+- **Infrastructure as Code** — the entire AWS estate (network, compute, edge, security, identity) is defined in Terraform with remote state and locking.
+- **Container orchestration** — the app runs on Amazon EKS with high availability, horizontal autoscaling, and self-healing deploys.
+- **CI/CD with security built in** — a GitHub Actions pipeline runs secret scanning, unit tests, code-quality analysis (SonarQube), container image vulnerability scanning (Trivy), and deploys to the cluster via Helm.
+- **Edge security** — CloudFront with a WAF (managed rule groups plus per-IP rate limiting), TLS via ACM, and an origin locked to CloudFront only.
+- **Observability** — Prometheus and Grafana in-cluster, CloudWatch, VPC flow logs, and CloudTrail audit logging.
+- **Least-privilege identity** — IAM roles for service accounts (IRSA), GitHub OIDC federation (no long-lived cloud keys), and SSM-based instance access (no SSH keys).
 
 ---
 
-## 🏗️ Architecture
+## 2. Application overview
 
-The application follows a microservices architecture where individual responsibilities are separated into independent services.
+ZIDD 2.0 is a real-time chat platform composed of three services plus their datastores.
 
-Nginx acts as the single entry point for the application.
+| Service | Stack | Port | Datastore | Notes |
+|---|---|---|---|---|
+| **auth-service** | Spring Boot 3.2 / Java 17 | 8005 | MySQL | Signup, login, JWT issuance, user validation |
+| **chat-service** | Spring Boot 3.2 / Java 17 | 8010 | MongoDB + Redis | Messages, WebSocket/STOMP real-time chat |
+| **chat-app-client** | React / Vite, served by nginx | 80 | — | Domain-agnostic SPA; derives API URL from the browser location |
 
-### Architecture Diagram
-
-<!-- Keep the existing architecture image here exactly as it is -->
-
-![ZIDD 2.0 Architecture](./architecture.png)
-
-> **Note:** The architecture diagram above is the existing project architecture diagram.
+Each service ships as a container image in Amazon ECR and is deployed to EKS by Helm.
 
 ---
 
-## 🧩 System Architecture
+## 3. Architecture
 
-```text
-                         ┌─────────────────────┐
-                         │        USER         │
-                         │      Browser        │
-                         └──────────┬──────────┘
-                                    │
-                                    │ HTTP / WebSocket
-                                    ▼
-                         ┌─────────────────────┐
-                         │       NGINX         │
-                         │   Reverse Proxy     │
-                         │  Single Entry Point │
-                         └──────────┬──────────┘
-                                    │
-                    ┌───────────────┴───────────────┐
-                    │                               │
-                    ▼                               ▼
-          ┌──────────────────┐             ┌──────────────────┐
-          │   React Client   │             │ Backend Services │
-          │  chat-app-client │             │                  │
-          └──────────────────┘             └────────┬─────────┘
-                                                      │
-                                  ┌───────────────────┴───────────────────┐
-                                  │                                       │
-                                  ▼                                       ▼
-                       ┌──────────────────┐                   ┌──────────────────┐
-                       │   Auth Service   │                   │   Chat Service   │
-                       │   Spring Boot    │                   │   Spring Boot    │
-                       └────────┬─────────┘                   └────────┬─────────┘
-                                │                                      │
-                                ▼                                ┌─────┴─────┐
-                         ┌──────────────┐                        │           │
-                         │    MySQL     │                        ▼           ▼
-                         │  Auth Data   │                    MongoDB      Redis
-                         └──────────────┘                    Messages     Cache
-```
+![ZIDD2 Architecture](docs/architecture.png)
 
-### 🔄 Request Flow
+The request path and platform layout, top to bottom:
 
-**Authentication Flow**
+**Edge:** User → GoDaddy DNS (`zidd2.raveendra.website`) → CloudFront (CDN + ACM TLS) → WAF (managed rules + rate limit) → Application Load Balancer.
 
-```text
-User
- │
- ▼
-React Frontend
- │
- ▼
-Nginx
- │
- ▼
-Auth Service
- │
- ├── Validate Credentials
- ├── Authenticate User
- └── Generate JWT
- │
- ▼
-React Frontend
- │
- ▼
-Authenticated Session
-```
+**Network (VPC `10.0.0.0/16`, ap-south-1, 3 AZ):**
+- **Public subnets** — ALB, SonarQube EC2 (Elastic IP), NAT gateway. Systems Manager provides access and patching.
+- **Private subnets** — the EKS worker nodes (2× t3.medium) running all application workloads and monitoring; NAT gateway for egress.
 
-**Real-Time Messaging Flow**
+**Workloads (EKS):** auth-service (+MySQL), chat-service (+MongoDB, +Redis), frontend (nginx), and the Prometheus + Grafana stack. HPA autoscales the app tiers (min 2 / max 5 replicas).
 
-```text
-User A
- │
- ▼
-React Client
- │
- │ WebSocket / STOMP
- ▼
-Nginx
- │
- ▼
-Chat Service
- │
- ├──────────────► MongoDB
- │                 Message Storage
- │
- └──────────────► Redis
-                   Caching
- │
- ▼
-Real-Time Message
- │
- ▼
-Connected Users
+**Supporting services:** ECR (3 image repos), Secrets Manager, S3 (VPC flow logs, CloudFront logs, Terraform state), IAM (OIDC / SSM / IRSA roles), DynamoDB (Terraform state lock), CloudTrail (multi-region audit trail), CloudWatch (metrics + logs).
+
+**Delivery:** GitHub Actions pipeline, triggered on push to the `dev` branch, using the `dev` GitHub Environment's secrets and variables.
+
+> The editable architecture diagram (draw.io, with official AWS icons) is included as `zidd2-architecture.drawio`. Open it at app.diagrams.net.
+
+---
+
+## 4. Infrastructure (Terraform)
+
+The Terraform is modular, with a flat root that wires the modules together.
+
+**Modules:** `vpc` (3 public + 3 private subnets, IGW, single NAT, flow logs to S3), `s3`, `ec2` (generic; supports SSM Session Manager + Patch Manager via instance profile), `ecr`, `iam` (GitHub OIDC provider + CI role, least-privilege), `acm`, `alb`, `cloudfront` (+ WAF web ACL), `eks`, `secrets-manager`. Root files add the AWS Load Balancer Controller, External Secrets wiring, CloudTrail, and the EKS access entry for the CI role.
+
+**State management:** S3 backend (`zidd2-tfstate-…`) with DynamoDB state locking.
+
+**Key design decisions:**
+- **EKS access via API access entries** — the cluster uses `API_AND_CONFIG_MAP` authentication mode so the GitHub CI role is granted cluster access through an access entry (rather than editing `aws-auth`). `bootstrap_cluster_creator_admin_permissions` is pinned to avoid cluster replacement on updates.
+- **Single NAT gateway** — cost-conscious choice for a non-production footprint.
+- **CloudFront-only ALB** — the ALB security group ingress is restricted to the CloudFront managed prefix list, so the origin is not reachable directly from the internet.
+
+**Reproduce:**
+```bash
+cd terraform
+terraform init
+terraform plan -out=tfplan
+terraform apply tfplan
 ```
 
 ---
 
-## 🧱 Services
+## 5. Application deployment (Helm)
 
-### 🔐 Auth Service
+A single Helm chart deploys the whole application stack.
 
-The `auth-service` is responsible for authentication and user identity management.
+**Templates:** `storageclass` (gp3 via EBS CSI), `secrets`, `mysql`, `mongodb`, `redis`, `auth`, `chat`, `frontend`, `targetgroupbinding` (binds the frontend service to the ALB target group), and `hpa`.
 
-**Responsibilities**
-- User registration
-- User login
-- Authentication
-- JWT generation
-- JWT validation
-- User information retrieval
+**High availability:** each application tier runs 2 replicas; the HPA scales them between 2 and 5 based on CPU. Databases run as StatefulSets with gp3-backed persistent volumes.
 
-**Technology**
-- Spring Boot
-- Spring Security
-- JWT
-- MySQL
+**Secrets:** the chart reads database and JWT secrets from values that the CI pipeline injects at deploy time (`--set`), so no secrets live in the chart or the repo. (An External Secrets Operator integration with AWS Secrets Manager was also built and demonstrated — see section 9.)
 
-### 💬 Chat Service
-
-The `chat-service` manages real-time communication between users.
-
-**Responsibilities**
-- Sending messages
-- Receiving messages
-- Persisting chat messages
-- Real-time message delivery
-- WebSocket communication
-- STOMP messaging
-
-**Technology**
-- Spring Boot
-- WebSocket
-- STOMP
-- MongoDB
-- Redis
-
-### ⚛️ Chat Application Client
-
-The `chat-app-client` provides the frontend interface for users.
-
-**Responsibilities**
-- User registration
-- User login
-- Chat interface
-- Real-time messaging
-- User identity display
-- Message history
-- Logout
-
-**Technology**
-- React
-- STOMP Client
-- Chat UI Kit
-- JavaScript
-
-### 🌐 Nginx
-
-Nginx works as the application's reverse proxy and single entry point.
-
-**Responsibilities**
-- Serving React static files
-- Routing API requests
-- Routing authentication requests
-- Routing chat requests
-- WebSocket proxying
-- Connecting frontend requests with backend services
-
-The application can therefore be accessed through a single endpoint instead of exposing every backend service directly.
-
-```text
-Browser
-   │
-   ▼
-localhost:80
-   │
-   ▼
- Nginx
-   │
-   ├── Frontend
-   ├── Auth API
-   └── Chat API / WebSocket
+**Deploy:**
+```bash
+helm upgrade --install zidd2 ./helm -n zidd2 --create-namespace \
+  --set ecrRegistry=<account>.dkr.ecr.ap-south-1.amazonaws.com \
+  --set imageTag=<tag> \
+  --set mysql.rootPassword=<secret> \
+  --set auth.jwtSecret=<secret> \
+  --atomic --wait --timeout 5m
 ```
 
----
-
-## 🛠️ Technology Stack
-
-| Category | Technology |
-|---|---|
-| Frontend | React |
-| Backend | Spring Boot |
-| Authentication | Spring Security |
-| Authentication Token | JWT |
-| Real-Time Communication | WebSocket / STOMP |
-| Reverse Proxy | Nginx |
-| Authentication Database | MySQL |
-| Chat Database | MongoDB |
-| Caching | Redis |
-| Containerization | Docker |
-| Orchestration | Docker Compose |
-| Version Control | Git / GitHub |
+`--atomic` makes deploys **self-healing**: if the new pods fail their readiness probes within the timeout, Helm automatically rolls back to the last working release.
 
 ---
 
-## 📁 Project Structure
+## 6. CI/CD pipeline (GitHub Actions)
 
-```text
+Triggered on push to `dev` (and manually via workflow dispatch). The pipeline is environment-aware: the branch selects the GitHub Environment, whose secrets and variables are injected into the jobs. This makes it straightforward to extend to `stage` and `prod` (each as its own environment, optionally with a required-reviewer approval gate to make production a Continuous **Delivery** flow).
+
+**Stages, in order:**
+
+1. **setup** — resolves the target environment from the branch.
+2. **git-leak** — [gitleaks](https://github.com/gitleaks/gitleaks-action) scans the repository for committed secrets. Fails fast.
+3. **unit-test** — builds and packages both Java services with Maven.
+4. **sonar** — SonarQube analysis of three projects: `auth-service`, `chat-service` (via Maven), and the React `frontend` (via the standalone SonarScanner). Results appear on the SonarQube server.
+5. **build-push** — builds all three Docker images, scans each with **Trivy** for CRITICAL/HIGH vulnerabilities (results uploaded as SARIF to the GitHub **Security → Code scanning** tab), and pushes to ECR. Images are tagged with the commit SHA.
+6. **deploy** — configures kubeconfig, runs `helm upgrade --install … --atomic`, and verifies the rollout.
+
+**Authentication:** AWS access uses **GitHub OIDC** — the workflow assumes an IAM role via web identity federation, so there are no long-lived AWS keys stored in GitHub.
+
+---
+
+## 7. Security
+
+Defense in depth across the stack:
+
+- **Edge:** WAF web ACL on CloudFront with AWS managed rule groups (Common Rule Set, Known Bad Inputs) plus a **rate-based rule at 100 requests / 5-minute window per IP** (≈20 req/min per source IP — the tightest AWS WAF allows).
+- **Network:** ALB origin restricted to the CloudFront managed prefix list; workloads in private subnets; egress via NAT.
+- **Transport:** TLS terminated at CloudFront via an ACM certificate; viewer protocol policy redirects HTTP to HTTPS.
+- **Identity:** IRSA for pod-level AWS permissions; GitHub OIDC for CI (no static keys); SSM Session Manager for instance access (no SSH keys or open port 22); SSM Patch Manager for OS patching.
+- **Supply chain:** gitleaks (secret scanning), SonarQube (code quality/security), Trivy (image CVE scanning) — all gating the pipeline before deploy.
+- **Audit & logging:** CloudTrail (multi-region, log-file validation) for API audit; VPC flow logs and CloudFront logs to S3; CloudWatch metrics and logs.
+
+---
+
+## 8. Observability
+
+- **In-cluster:** Prometheus scrapes cluster and workload metrics; Grafana provides dashboards. Deployed via the `kube-prometheus-stack` Helm chart in the `monitoring` namespace.
+- **Access:** Grafana is kept internal (`ClusterIP`) and reached via `kubectl port-forward` — least-exposure practice for an admin dashboard rather than putting it on the public internet.
+  ```bash
+  kubectl port-forward -n monitoring svc/monitoring-grafana 8080:80
+  # open http://localhost:8080
+  ```
+- **AWS-native:** CloudWatch for infrastructure metrics/logs; CloudTrail for the API audit trail.
+
+**Autoscaling demonstrated:** under synthetic load the HPA scaled the app tier from 2 to 3 replicas as CPU crossed the target, then scaled back in after the load subsided.
+
+---
+
+## 9. Notable engineering decisions & lessons
+
+A few things that were solved along the way and are worth calling out:
+
+- **GitHub immutable subject claims (OIDC).** Repositories created/renamed after mid-2026 use *immutable* OIDC subject claims that embed numeric org/repo IDs (`repo:<org>@<orgid>/<repo>@<repoid>:*`). The IAM trust policy had to match this exact format, which was the root cause of an initial `AssumeRoleWithWebIdentity` denial.
+- **EKS cluster replacement guard.** Adding an `access_config` block without pinning `bootstrap_cluster_creator_admin_permissions` caused Terraform to plan a full cluster **replacement**. Pinning it kept the change an in-place update — a good example of always reading the plan before applying.
+- **External Secrets Operator.** ESO was integrated with AWS Secrets Manager via IRSA and confirmed syncing (`SecretSynced`). Because of CRD/version churn on repeated Helm upgrades, the app was kept on Helm-injected Kubernetes secrets for demo stability, with the ESO integration documented and reproducible (install CRDs out-of-band, run the operator with CRD management disabled, and never `helm upgrade` the release).
+- **Selective, tool-appropriate scanning.** Java services are scanned through the Maven Sonar plugin; the React frontend is scanned with the standalone SonarScanner — Maven can't analyze JS. A subtle gotcha: the frontend `sonar-project.properties` must be written without a UTF-8 BOM or the scanner fails to read `sonar.projectKey`.
+- **Continuous Deployment today, Delivery-ready.** `dev` auto-deploys on push (Continuous Deployment). Adding a required reviewer to a `prod` environment turns production into a gated Continuous Delivery flow without any pipeline rewrite.
+
+---
+
+## 10. Repository layout
+
+```
 zidd2-devops-platform/
-│
-├── auth-service/
-│   ├── src/
-│   ├── Dockerfile
-│   └── ...
-│
-├── chat-service/
-│   ├── src/
-│   ├── Dockerfile
-│   └── ...
-│
-├── chat-app-client/
-│   ├── src/
-│   │   ├── api/
-│   │   ├── hooks/
-│   │   ├── pages/
-│   │   └── utils/
-│   ├── Dockerfile
-│   └── ...
-│
-├── nginx.conf
-├── docker-compose.yml
-└── README.md
+├── .github/workflows/ci-cd.yml     # the CI/CD pipeline
+├── terraform/                      # all infrastructure as code
+│   ├── main.tf, variables.tf, outputs.tf, versions.tf
+│   ├── cloudtrail.tf, external-secrets.tf, lb-controller.tf
+│   └── modules/                    # vpc, s3, ec2, ecr, iam, acm, alb, cloudfront, eks, secrets-manager
+├── helm/                           # the application Helm chart
+│   ├── Chart.yaml, values.yaml
+│   └── templates/
+├── auth-service/                   # Spring Boot auth service
+├── chat-service/                   # Spring Boot chat service
+├── chat-app-client/                # React frontend
+└── docker-compose.yml              # local development
 ```
+
+Secrets and state are excluded from version control (`.gitignore` covers `*.tfstate`, `terraform.tfvars`, `*.pem`, `.terraform/`, local DB data, and monitoring/ESO manifests).
 
 ---
 
-## 🐳 Docker Architecture
+## 11. Possible next enhancements
 
-All major application components are containerized.
-
-```text
-Docker Compose
-      │
-      ├── React Client
-      │
-      ├── Nginx
-      │
-      ├── Auth Service
-      │
-      ├── Chat Service
-      │
-      ├── MySQL
-      │
-      ├── MongoDB
-      │
-      └── Redis
-```
-
-Docker Compose provides a reproducible local environment where the services can communicate using the Docker network.
+- **GitOps with ArgoCD** — replace the pipeline's push-based deploy with a pull-based, declarative model (drift detection, sync UI, easy rollback).
+- **Multi-environment** — stand up `stage` and `prod` (the pipeline is already environment-aware) with a production approval gate.
+- **CloudFront caching** — add a cache behavior for immutable static assets (`/assets/*`) while keeping API and WebSocket paths uncached.
+- **Full HTTPS to the origin** — terminate TLS at the ALB as well as CloudFront.
 
 ---
 
-## 🚀 Getting Started
-
-### Prerequisites
-
-Make sure the following are installed on your system:
-
-- Git
-- Docker
-- Docker Compose
-
-Verify the installations:
-
-```bash
-git --version
-docker --version
-docker compose version
-```
-
-### 📥 Installation
-
-**1. Clone the Repository**
-
-```bash
-git clone https://github.com/yashtrivedi0402/zidd2-devops-platform.git
-```
-
-Move into the project directory:
-
-```bash
-cd zidd2-devops-platform
-```
-
-### 🔨 Build the Application
-
-Build all Docker images:
-
-```bash
-docker compose build
-```
-
-### ▶️ Start the Application
-
-Start all services in detached mode:
-
-```bash
-docker compose up -d
-```
-
-Check the running containers:
-
-```bash
-docker compose ps
-```
-
-You can also use:
-
-```bash
-docker ps
-```
-
-### 🌐 Access the Application
-
-Once all services are healthy, open:
-
-```
-http://localhost
-```
-
-The application is served through Nginx.
-
-### 🧪 Verify Services
-
-Check the status of all containers:
-
-```bash
-docker compose ps
-```
-
-View logs:
-
-```bash
-docker compose logs
-```
-
-Follow logs in real time:
-
-```bash
-docker compose logs -f
-```
-
----
-
-## 📋 Useful Docker Commands
-
-**View Running Containers**
-```bash
-docker compose ps
-```
-
-**View All Containers**
-```bash
-docker ps -a
-```
-
-**View Application Logs**
-```bash
-docker compose logs -f
-```
-
-**Auth Service Logs**
-```bash
-docker compose logs -f auth-service
-```
-
-**Chat Service Logs**
-```bash
-docker compose logs -f chat-service
-```
-
-**Nginx / Frontend Logs**
-```bash
-docker compose logs -f app
-```
-
-**Restart Services**
-```bash
-docker compose restart
-```
-
-**Stop the Application**
-```bash
-docker compose down
-```
-
-**Rebuild Everything**
-```bash
-docker compose down
-docker compose build
-docker compose up -d
-```
-
----
-
-## 🔌 Network Communication
-
-The services communicate through the Docker Compose network.
-
-```text
-springboot-network
-│
-├── app
-├── auth-service
-├── chat-service
-├── mysqldb
-├── mongodb
-└── redisdb
-```
-
-Services can communicate with each other using their Docker service names.
-
-For example:
-
-- `auth-service` → `mysqldb`
-- `chat-service` → `mongodb`
-- `chat-service` → `redisdb`
-- `nginx` → `auth-service`
-- `nginx` → `chat-service`
-
----
-
-## 🔐 Authentication
-
-The application uses JWT-based authentication.
-
-The general flow is:
-
-```text
-Register / Login
-       │
-       ▼
- Auth Service
-       │
-       ▼
- Credentials Validation
-       │
-       ▼
- JWT Token
-       │
-       ▼
- Client
-       │
-       ▼
- Authenticated Requests
-```
-
-The token is used when making authenticated API and WebSocket requests.
-
----
-
-## 💬 Real-Time Communication
-
-The chat application uses WebSocket and STOMP for real-time communication.
-
-Instead of repeatedly polling the backend for new messages, connected clients maintain a WebSocket connection.
-
-```text
-Client A
-   │
-   │ WebSocket
-   ▼
-Chat Service
-   │
-   │ STOMP
-   ▼
-Message Topic
-   │
-   ├──────────────► Client B
-   │
-   ├──────────────► Client C
-   │
-   └──────────────► Client D
-```
-
-This allows messages to appear in connected clients in real time.
-
----
-
-## 🗄️ Data Storage
-
-The application uses different databases for different responsibilities.
-
-**MySQL**
-
-Used by the authentication service.
-
-```text
-Auth Service
-     │
-     ▼
-   MySQL
-```
-
-**MongoDB**
-
-Used by the chat service for storing messages.
-
-```text
-Chat Service
-     │
-     ▼
-  MongoDB
-```
-
-**Redis**
-
-Used by the chat service for caching and fast-access data.
-
-```text
-Chat Service
-     │
-     ▼
-   Redis
-```
-
-This separation follows the microservices principle of giving services ownership over their relevant data.
-
----
-
-## 🎨 ZIDD 2.0 UI
-
-The frontend has been customized around the ZIDD 2.0 — Batch 2 identity.
-
-**UI Characteristics**
-- Dark developer-focused interface
-- ZIDD 2.0 branding
-- Batch 2 identity
-- Team collaboration messaging
-- Online user indicator
-- Message timestamps
-- Responsive layout
-- Real-time message updates
-
----
-
-## 🧑‍💻 Development Workflow
-
-A typical development workflow for the project is:
-
-```text
-Developer
-    │
-    ▼
-GitHub Repository
-    │
-    ▼
-Feature Branch
-    │
-    ▼
-Code Changes
-    │
-    ▼
-Local Docker Environment
-    │
-    ├── Build
-    ├── Test
-    └── Run
-    │
-    ▼
-Pull Request
-    │
-    ▼
-Code Review
-    │
-    ▼
-Merge
-```
-
----
-
-## 🔮 Future DevOps Roadmap
-
-ZIDD 2.0 can be extended into a complete DevOps platform.
-
-**Phase 1 — Current**
-```text
-React
-   │
-Docker
-   │
-Docker Compose
-   │
-Spring Boot Microservices
-```
-
-**Phase 2 — CI/CD**
-```text
-GitHub
-   │
-   ▼
-GitHub Actions / Jenkins
-   │
-   ├── Build
-   ├── Test
-   ├── Docker Build
-   └── Push Image
-```
-
-**Phase 3 — Container Registry**
-```text
-CI/CD
-  │
-  ▼
-Docker Registry
-  │
-  ▼
-Versioned Images
-```
-
-**Phase 4 — Kubernetes**
-```text
-Container Registry
-        │
-        ▼
-   Kubernetes
-        │
-        ├── Deployments
-        ├── Services
-        ├── ConfigMaps
-        ├── Secrets
-        └── Ingress
-```
-
-**Phase 5 — Observability**
-```text
-Kubernetes
-    │
-    ├── Prometheus
-    ├── Grafana
-    ├── Centralized Logging
-    └── Application Monitoring
-```
-
----
-
-## 📈 Planned Improvements
-
-Some potential improvements for future iterations include:
-
-- [ ] CI/CD pipeline
-- [ ] Automated testing
-- [ ] Docker image versioning
-- [ ] Container registry integration
-- [ ] Kubernetes deployment
-- [ ] Kubernetes Ingress
-- [ ] Horizontal Pod Autoscaling
-- [ ] Infrastructure as Code
-- [ ] Prometheus monitoring
-- [ ] Grafana dashboards
-- [ ] Centralized logging
-- [ ] Application health monitoring
-- [ ] Production-grade secrets management
-- [ ] Automated deployment
-- [ ] Improved test coverage
-
----
-
-## 🤝 Team Collaboration
-
-ZIDD 2.0 is being developed as a collaborative Batch 2 project.
-
-Different contributors can work on independent areas such as:
-
-```text
-Frontend
-   │
-Backend
-   │
-DevOps
-   │
-Infrastructure
-   │
-Testing
-   │
-Monitoring
-   │
-Documentation
-```
-
-For development, contributors should preferably use feature branches:
-
-```bash
-git checkout -b feature/your-feature
-```
-
-After completing the work:
-
-```bash
-git add .
-git commit -m "feat: add your feature"
-git push origin feature/your-feature
-```
-
-Then open a Pull Request for review.
-
----
-
-## ⚠️ Important Notes
-
-This project is currently intended for development, learning and demonstration purposes.
-
-Before using it in a production environment, additional work would be required around:
-
-- Security hardening
-- Secret management
-- Database security
-- TLS/HTTPS
-- Production configuration
-- High availability
-- Monitoring
-- Logging
-- Backup and recovery
-- Scalability
-- Infrastructure automation
-
-Do not use development credentials or development configuration in production.
-
----
-
-## 📜 License
-
-This project is licensed under the MIT License.
-
-See the LICENSE file for more information.
-
-<p align="center"> <strong>⚡ ZIDD 2.0</strong> </p>
-<p align="center"> Batch 2 • Build • Deploy • Collaborate </p>
+*Built on Terraform, Helm, Amazon EKS, GitHub Actions, SonarQube, Trivy, Prometheus & Grafana. Region: ap-south-1 (Mumbai).*
