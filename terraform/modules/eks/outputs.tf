@@ -23,3 +23,7 @@ output "node_security_group_id" {
 output "oidc_provider_url" {
   value = replace(aws_eks_cluster.this.identity[0].oidc[0].issuer, "https://", "")
 }
+
+output "cluster_autoscaler_role_arn" {
+  value = aws_iam_role.cluster_autoscaler.arn
+}
