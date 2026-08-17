@@ -35,7 +35,7 @@ Each service ships as a container image in Amazon ECR and is deployed to EKS by 
 
 ## 3. Architecture
 
-![ZIDD2 Architecture](docs/architecture.png)
+![ZIDD2 Architecture](https://raw.githubusercontent.com/RaveendraKaturu/zidd2-devops-platform/main/docs/architecture.png)
 
 The request path and platform layout, top to bottom:
 
